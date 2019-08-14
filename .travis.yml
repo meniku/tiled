@@ -37,7 +37,7 @@ matrix:
         - libgl1-mesa-dev
         - zlib1g-dev
         - libzstd-dev
-        - p7zip
+        - p7zip-full
     env:
       - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
       - QT_INSTALL_DIR=~/Qt
