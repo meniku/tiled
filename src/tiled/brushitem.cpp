@@ -74,7 +74,7 @@ void BrushItem::clear()
 void BrushItem::setTileLayer(const SharedTileLayer &tileLayer)
 {
     mTileLayer = tileLayer;
-    mRegion = tileLayer ? tileLayer->region() : QRegion();
+    mRegion = tileLayer ? tileLayer->region([] (const Cell &cell) { return cell.checked(); }) : QRegion();
 
     updateBoundingRect();
     update();

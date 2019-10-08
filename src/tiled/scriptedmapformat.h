@@ -21,6 +21,7 @@
 #pragma once
 
 #include "mapformat.h"
+#include "tilesetformat.h"
 
 #include <QJSValue>
 
@@ -88,6 +89,50 @@ inline QString ScriptedMapFormat::errorString() const
 {
     return mError;
 }
+
+
+//class ScriptedTilesetFormat final : public TilesetFormat
+//{
+//    Q_OBJECT
+//    Q_INTERFACES(Tiled::TilesetFormat)
+
+//public:
+//    ScriptedTilesetFormat(const QString &shortName, const QJSValue &object,
+//                          QObject *parent = nullptr);
+//    ~ScriptedTilesetFormat() override;
+
+//    // FileFormat interface
+//    Capabilities capabilities() const override;
+//    QString nameFilter() const override;
+//    QString shortName() const override;
+//    bool supportsFile(const QString &fileName) const override;
+//    QString errorString() const override;
+
+//    // MapFormat interface
+//#if 0
+//    QStringList outputFiles(const Map *map, const QString &fileName) const override;
+//#endif
+//    std::unique_ptr<Map> read(const QString &fileName) override;
+//    bool write(const Map *map, const QString &fileName, Options options) override;
+
+//    static bool validateMapFormatObject(const QJSValue &value);
+
+//private:
+//    QString mShortName;
+//    QString mError;
+//    QJSValue mObject;
+//};
+
+
+//inline QString ScriptedMapFormat::shortName() const
+//{
+//    return mShortName;
+//}
+
+//inline QString ScriptedMapFormat::errorString() const
+//{
+//    return mError;
+//}
 
 } // namespace Tiled
 
