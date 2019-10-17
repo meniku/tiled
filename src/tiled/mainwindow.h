@@ -197,6 +197,8 @@ private:
     void exportMapAs(MapDocument *mapDocument);
     void exportTilesetAs(TilesetDocument *tilesetDocument);
 
+    void worldMoveMap();
+
     ActionManager *mActionManager;
     Ui::MainWindow *mUi;
     Document *mDocument = nullptr;

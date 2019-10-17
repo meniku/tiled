@@ -273,6 +273,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     ActionManager::registerAction(mUi->actionZoomIn, "ZoomIn");
     ActionManager::registerAction(mUi->actionZoomNormal, "ZoomNormal");
     ActionManager::registerAction(mUi->actionZoomOut, "ZoomOut");
+    ActionManager::registerAction(mUi->actionWorldMoveMap, "World->MoveMap");
 
     mMapEditor = new MapEditor;
     mTilesetEditor = new TilesetEditor;
@@ -681,6 +682,8 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
         if (preferences->shouldShowPatreonDialog())
             becomePatron();
     });
+
+    connect(mUi->actionWorldMoveMap, &QAction::triggered, this, &MainWindow::worldMoveMap);
 }
 
 MainWindow::~MainWindow()
@@ -1151,6 +1154,11 @@ void MainWindow::zoomIn()
 {
     if (mZoomable)
         mZoomable->zoomIn();
+}
+
+void MainWindow::worldMoveMap()
+{
+
 }
 
 void MainWindow::zoomOut()
