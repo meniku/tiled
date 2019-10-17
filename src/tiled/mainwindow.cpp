@@ -1158,7 +1158,7 @@ void MainWindow::zoomIn()
 
 void MainWindow::worldMoveMap()
 {
-
+    WorldManager::instance().moveMap( QPoint( 100, 0 ) );
 }
 
 void MainWindow::zoomOut()

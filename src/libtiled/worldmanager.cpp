@@ -233,6 +233,17 @@ const World *WorldManager::worldForMap(const QString &fileName) const
     return nullptr;
 }
 
+void WorldManager::moveMap( QPoint offset )
+{
+    for (auto world : mWorlds)
+    {
+        World::MapEntry& entry = world->maps[0];
+        entry.rect.moveLeft( entry.rect.left() + offset.x() );
+        entry.rect.moveTop( entry.rect.top() + offset.y() );
+    }
+    emit worldsChanged();
+}
+
 bool World::containsMap(const QString &fileName) const
 {
     for (const World::MapEntry &mapEntry : maps) {
@@ -335,5 +346,7 @@ void World::clearErrorsAndWarnings() const
 {
     emit LoggingInterface::instance().removeIssuesWithContext(this);
 }
+
+
 
 } // namespace Tiled
