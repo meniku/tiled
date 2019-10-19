@@ -76,6 +76,8 @@ QtGuiApplication {
         "abstracttiletool.h",
         "abstracttool.cpp",
         "abstracttool.h",
+        "abstractworldtool.cpp",
+        "abstractworldtool.h",
         "actionmanager.cpp",
         "actionmanager.h",
         "addpropertydialog.cpp",
@@ -528,6 +530,8 @@ QtGuiApplication {
         "wangtemplatemodel.h",
         "wangtemplateview.cpp",
         "wangtemplateview.h",
+        "worldmovemaptool.cpp",
+        "worldmovemaptool.h",
         "zoomable.cpp",
         "zoomable.h",
     ]

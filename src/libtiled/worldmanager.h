@@ -68,6 +68,8 @@ struct TILEDSHARED_EXPORT World
     bool onlyShowAdjacentMaps;
     bool isDirty;
 
+    int mapIndex(const QString &fileName) const;
+    bool moveMap(int mapIndex, QPoint &offset);
     bool containsMap(const QString &fileName) const;
     QRect mapRect(const QString &fileName) const;
     QVector<MapEntry> allMaps() const;
@@ -98,7 +100,7 @@ public:
 
     const World *worldForMap(const QString &fileName) const;
 
-    void moveMap( QPoint offset );
+    void moveMap( const QString &fileName, QPoint offset );
 
 signals:
     void worldsChanged();

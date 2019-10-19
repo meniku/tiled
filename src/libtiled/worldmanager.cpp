@@ -233,15 +233,39 @@ const World *WorldManager::worldForMap(const QString &fileName) const
     return nullptr;
 }
 
-void WorldManager::moveMap( QPoint offset )
+void WorldManager::moveMap( const QString &fileName, QPoint offset )
 {
     for (auto world : mWorlds)
     {
-        World::MapEntry& entry = world->maps[0];
-        entry.rect.moveLeft( entry.rect.left() + offset.x() );
-        entry.rect.moveTop( entry.rect.top() + offset.y() );
+        int index = world->mapIndex(fileName);
+        if( index < 0 )
+        {
+            continue;
+        }
+        world->moveMap(index, offset);
     }
     emit worldsChanged();
+}
+
+bool World::moveMap(int mapIndex, QPoint &offset)
+{
+    World::MapEntry& entry = maps[mapIndex];
+    entry.rect.moveLeft( entry.rect.left() + offset.x() );
+    entry.rect.moveTop( entry.rect.top() + offset.y() );
+    isDirty = true;
+    return true;
+}
+
+int World::mapIndex(const QString &fileName) const
+{
+    for (int i = 0; i < maps.length(); i++ )
+    {
+        if (maps[i].fileName == fileName)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
 
 bool World::containsMap(const QString &fileName) const
@@ -262,7 +286,9 @@ bool World::containsMap(const QString &fileName) const
 
 QRect World::mapRect(const QString &fileName) const
 {
-    for (const World::MapEntry &mapEntry : maps) {
+    const QVector<World::MapEntry> all(allMaps());
+
+    for (const World::MapEntry &mapEntry : all) {
         if (mapEntry.fileName == fileName)
             return mapEntry.rect;
     }

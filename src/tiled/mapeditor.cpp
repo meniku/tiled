@@ -83,6 +83,7 @@
 #include "wangdock.h"
 #include "wangset.h"
 #include "zoomable.h"
+#include "worldmovemaptool.h"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -194,6 +195,8 @@ MapEditor::MapEditor(QObject *parent)
     CreateObjectTool *polygonObjectsTool = new CreatePolygonObjectTool(this);
     CreateObjectTool *textObjectsTool = new CreateTextObjectTool(this);
 
+    mToolsToolBar->addAction(mToolManager->registerTool(new WorldMoveMapTool(this)));
+    mToolsToolBar->addSeparator();
     mToolsToolBar->addAction(mToolManager->registerTool(mStampBrush));
     mToolsToolBar->addAction(mToolManager->registerTool(mTerrainBrush));
     mToolsToolBar->addAction(mToolManager->registerTool(mWangBrush));
