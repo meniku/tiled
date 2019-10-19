@@ -379,23 +379,18 @@ bool WorldManager::removeMap(const QString &fileName)
     return false;
 }
 
-bool WorldManager::addMap(const World* world, const QString &mapFileName, const QRect &rect)
+bool WorldManager::addMap(const QString &fileName, const QString &mapFileName, const QRect &rect)
 {
-    if( !world )
-    {
-        return false;
-    }
-
     if( worldForMap(mapFileName) )
     {
         return false;
     }
 
-    for (auto nonConstWorld : mWorlds)
+    for (auto worlds : mWorlds)
     {
-        if( nonConstWorld == world )
+        if( worlds->fileName == fileName )
         {
-            nonConstWorld->addMap(mapFileName, rect);
+            worlds->addMap(mapFileName, rect);
             emit worldsChanged();
             return true;
         }

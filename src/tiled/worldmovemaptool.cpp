@@ -26,13 +26,8 @@
 #include "layer.h"
 #include "map.h"
 #include "mapdocument.h"
-#include "mapobject.h"
-#include "mapobjectitem.h"
-#include "mapobjectmodel.h"
 #include "maprenderer.h"
 #include "mapscene.h"
-#include "movemapobject.h"
-#include "objectgroup.h"
 #include "preferences.h"
 #include "selectionrectangle.h"
 #include "snaphelper.h"
@@ -148,6 +143,7 @@ void WorldMoveMapTool::mousePressed(QGraphicsSceneMouseEvent *event)
 {
     if( !currentMapCanBeMoved() )
     {
+        AbstractWorldTool::mousePressed(event);
         return;
     }
 
@@ -189,14 +185,14 @@ void WorldMoveMapTool::mousePressed(QGraphicsSceneMouseEvent *event)
 
 void WorldMoveMapTool::mouseMoved(const QPointF &pos,
                                      Qt::KeyboardModifiers modifiers)
-{
+{    
+    AbstractWorldTool::mouseMoved(pos, modifiers);
+
     const World* world = currentConstWorld();
     if (!world)
     {
         return;
     }
-
-    AbstractWorldTool::mouseMoved(pos, modifiers);
 
     // update drag offset
     const MapRenderer *renderer = mapDocument()->renderer();
@@ -204,8 +200,7 @@ void WorldMoveMapTool::mouseMoved(const QPointF &pos,
     mDragOffset = offset.toPoint();
 
     // snap to tilezie
-    mDragOffset.setX( mDragOffset.x() - (mDragOffset.x())  % mapDocument()->map()->tileWidth());
-    mDragOffset.setY( mDragOffset.y() - (mDragOffset.y())  % mapDocument()->map()->tileHeight());
+    mDragOffset = snapPoint(mDragOffset);
 
     // update preview
     mDragPreviewRect.moveTopLeft( renderer->pixelToScreenCoords( mDragOffset ) );
@@ -214,10 +209,11 @@ void WorldMoveMapTool::mouseMoved(const QPointF &pos,
 
 void WorldMoveMapTool::mouseReleased(QGraphicsSceneMouseEvent *event)
 {
-    if (event->button() != Qt::LeftButton)
+    if (!mMousePressed || event->button() != Qt::LeftButton)
+    {
+//        AbstractWorldTool::mouseReleased(event);
         return;
-    if (!mMousePressed)
-        return; // we didn't receive press so we should ignore this release
+    }
 
     mapScene()->removeItem(mSelectionRectangle.get());
     mMousePressed = false;
@@ -235,7 +231,6 @@ void WorldMoveMapTool::languageChanged()
     setName(tr("Move Map"));
     setShortcut(QKeySequence(tr("N")));
 }
-
 
 void WorldMoveMapTool::refreshCursor()
 {

@@ -67,8 +67,9 @@ protected:
      */
     void updateEnabledState() override;
 
-    void addToWorld();
+    void addAnotherMapToWorld();
     void removeFromWorld();
+    void addToWorld( const QString& fileName );
 
     QPoint snapPoint(QPoint point) const;
     bool currentMapCanBeMoved() const;

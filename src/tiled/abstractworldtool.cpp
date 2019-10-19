@@ -114,7 +114,7 @@ void AbstractWorldTool::populateToolBar(QToolBar *toolBar)
 
 void AbstractWorldTool::updateEnabledState()
 {
-    setEnabled(currentConstWorld() != nullptr);
+    setEnabled(mapDocument() != nullptr);
 }
 
 bool AbstractWorldTool::currentMapCanBeMoved() const
@@ -165,14 +165,30 @@ void AbstractWorldTool::showContextMenu(QPoint screenPos)
 {
     mMousePos = mapDocument()->renderer()->screenToPixelCoords(screenPos).toPoint();
 
+    const World* constWorld = currentConstWorld();
     QMenu menu;
-    QAction *removeFromWorldAction = menu.addAction(tr("Remove current map from world"),
-                                              this, &AbstractWorldTool::removeFromWorld, QKeySequence(tr("R") ) );
-    QAction *addToWorldAction = menu.addAction(tr("Add a map to the world"),
-                                              this, &AbstractWorldTool::addToWorld, QKeySequence(tr("A") ) );
+    if( constWorld )
+    {
+        QAction *addToWorldAction = menu.addAction(tr("Add another map"),
+                                                  this, &AbstractWorldTool::addAnotherMapToWorld, QKeySequence(tr("A") ) );
 
-    removeFromWorldAction->setIcon(QIcon(QLatin1String(":/images/16/remove.png")));
-    addToWorldAction->setIcon(QIcon(QLatin1String(":/images/16/add.png")));
+        QAction *removeFromWorldAction = menu.addAction(tr("remove from world %1").arg(constWorld->fileName),
+                                                  this, &AbstractWorldTool::removeFromWorld, QKeySequence(tr("R") ) );
+
+        removeFromWorldAction->setIcon(QIcon(QLatin1String(":/images/16/remove.png")));
+        addToWorldAction->setIcon(QIcon(QLatin1String(":/images/16/add.png")));
+    }
+    else
+    {
+        QStringList worlds = WorldManager::instance().loadedWorldFiles();
+        for( QString& world : worlds)
+        {
+            QAction *addToWorldAction = menu.addAction(tr("Add to world %1").arg(world));
+            connect(addToWorldAction, &QAction::triggered, this, [this,world] {
+                addToWorld(world);
+            });
+        }
+    }
 
     QAction *action = menu.exec(screenPos);
     if (!action)
@@ -180,7 +196,7 @@ void AbstractWorldTool::showContextMenu(QPoint screenPos)
 
 }
 
-void AbstractWorldTool::addToWorld()
+void AbstractWorldTool::addAnotherMapToWorld()
 {
     const World* constWorld = currentConstWorld();
     if( ! constWorld )
@@ -204,7 +220,21 @@ void AbstractWorldTool::addToWorld()
     QSize size(0,0);
     QRect rect = QRect(snapPoint(mMousePos), size);
 
-    WorldManager::instance().addMap( constWorld, mapFile, rect );
+    WorldManager::instance().addMap( constWorld->fileName, mapFile, rect );
+}
+
+void AbstractWorldTool::removeFromWorld()
+{
+    WorldManager::instance().removeMap( mapDocument()->fileName() );
+}
+
+void AbstractWorldTool::addToWorld( const QString& fileName )
+{
+    QSize size = mapDocument()->map()->size();
+    size.setWidth(size.width() * mapDocument()->map()->tileWidth());
+    size.setHeight(size.height() * mapDocument()->map()->tileHeight());
+    QRect rect = QRect( QPoint(0,0), size);
+    WorldManager::instance().addMap( fileName, mapDocument()->fileName() , rect );
 }
 
 QPoint AbstractWorldTool::snapPoint(QPoint point) const
@@ -212,9 +242,4 @@ QPoint AbstractWorldTool::snapPoint(QPoint point) const
     point.setX( point.x() - (point.x())  % mapDocument()->map()->tileWidth());
     point.setY( point.y() - (point.y())  % mapDocument()->map()->tileHeight());
     return point;
-}
-
-void AbstractWorldTool::removeFromWorld()
-{
-    WorldManager::instance().removeMap( mapDocument()->fileName() );
 }
