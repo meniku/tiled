@@ -67,9 +67,10 @@ struct TILEDSHARED_EXPORT World
     QVector<Pattern> patterns;
     bool onlyShowAdjacentMaps;
     bool isDirty;
+    bool canBeModified;
 
     int mapIndex(const QString &fileName) const;
-    bool moveMap(int mapIndex, QPoint &offset);
+    bool setMapRect(int mapIndex, const QRect &rect);
     bool containsMap(const QString &fileName) const;
     QRect mapRect(const QString &fileName) const;
     QVector<MapEntry> allMaps() const;
@@ -94,14 +95,16 @@ public:
 
     World *loadWorld(const QString &fileName, QString *errorString = nullptr);
     void unloadWorld(const QString &fileName);
+    bool saveWorld(const QString &fileName, QString *errorString = nullptr);
 
     const QMap<QString, World*> &worlds() const { return mWorlds; }
     QStringList loadedWorldFiles() const { return mWorlds.keys(); }
+    QStringList dirtyWorldFiles() const;
 
     const World *worldForMap(const QString &fileName) const;
 
-    void moveMap( const QString &fileName, QPoint offset );
-
+    void setMapRect( const QString &fileName, const QRect &rect );
+    bool mapCanBeMoved(const QString &fileName) const;
 signals:
     void worldsChanged();
 

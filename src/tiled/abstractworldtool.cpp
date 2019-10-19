@@ -113,13 +113,23 @@ void AbstractWorldTool::updateEnabledState()
     setEnabled(currentConstWorld() != nullptr);
 }
 
+bool AbstractWorldTool::currentMapCanBeMoved() const
+{
+    if( ! mapDocument() )
+    {
+        return false;
+    }
+    return WorldManager::instance().mapCanBeMoved( mapDocument()->fileName() );
+}
+
 QRect AbstractWorldTool::currentMapRect() const
 {
     const World* pWorld = currentConstWorld();
     QRect rect = pWorld->mapRect( mapDocument()->fileName() );
-    return QRect(rect.topLeft(), mapDocument()->map()->size());
-    //rect.setSize(mapDocument()->map()->size());
-    //return rect;
+    QSize size = mapDocument()->map()->size();
+    size.setWidth(size.width() * mapDocument()->map()->tileWidth());
+    size.setHeight(size.height() * mapDocument()->map()->tileHeight());
+    return QRect(rect.topLeft(), size);
 }
 
 const World *AbstractWorldTool::currentConstWorld() const

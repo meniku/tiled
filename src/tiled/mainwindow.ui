@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>553</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -119,11 +119,16 @@
       <string>Unload World</string>
      </property>
     </widget>
+    <widget class="QMenu" name="menuSaveWorld">
+     <property name="title">
+      <string>Save World</string>
+     </property>
+    </widget>
     <addaction name="actionAddExternalTileset"/>
     <addaction name="separator"/>
     <addaction name="actionLoadWorld"/>
-    <addaction name="actionWorldMoveMap"/>
     <addaction name="menuUnloadWorld"/>
+    <addaction name="menuSaveWorld"/>
     <addaction name="separator"/>
     <addaction name="actionResizeMap"/>
     <addaction name="actionOffsetMap"/>

@@ -61,6 +61,7 @@ public:
 
 protected:
 
+    void abortMoving();
     void refreshCursor();
 
     // drag state

@@ -538,6 +538,24 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
             });
         }
     });
+    connect(mUi->menuSaveWorld, &QMenu::aboutToShow, this, [this] {
+        mUi->menuSaveWorld->clear();
+
+        const auto worldFiles = WorldManager::instance().dirtyWorldFiles();
+        for (const QString &fileName : worldFiles) {
+            QAction *saveAction = mUi->menuSaveWorld->addAction(fileName);
+            connect(saveAction, &QAction::triggered, this, [this,fileName]
+            {
+                QString error;
+                if( !WorldManager::instance().saveWorld(fileName, &error) )
+                {
+                    QMessageBox::critical(this, tr("Error Writing Worldfile"), error);
+                }
+                const auto worldFiles = WorldManager::instance().dirtyWorldFiles();
+                mUi->menuSaveWorld->setEnabled(!worldFiles.isEmpty());
+            });
+        }
+    });
     connect(mUi->actionResizeMap, &QAction::triggered, this, &MainWindow::resizeMap);
     connect(mUi->actionOffsetMap, &QAction::triggered, this, &MainWindow::offsetMap);
     connect(mUi->actionAutoMap, &QAction::triggered,
@@ -556,6 +574,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     connect(mUi->actionAboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);
 
     mUi->menuUnloadWorld->setEnabled(!WorldManager::instance().worlds().isEmpty());
+    mUi->menuSaveWorld->setEnabled(!WorldManager::instance().dirtyWorldFiles().isEmpty());
 
     // Add recent file actions to the recent files menu
     for (auto &action : mRecentFiles) {

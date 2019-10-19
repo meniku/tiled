@@ -67,6 +67,7 @@ protected:
      */
     void updateEnabledState() override;
 
+    bool currentMapCanBeMoved() const;
     QRect currentMapRect() const;
     const World *currentConstWorld() const;
     QPoint currentTileSize();

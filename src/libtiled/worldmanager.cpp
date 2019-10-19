@@ -72,6 +72,19 @@ void WorldManager::deleteInstance()
     mInstance = nullptr;
 }
 
+QStringList WorldManager::dirtyWorldFiles() const
+{
+    QStringList list;
+    for (auto world : mWorlds)
+    {
+        if( world->isDirty )
+        {
+            list += world->fileName;
+        }
+    }
+    return list;
+}
+
 void WorldManager::reloadWorldFiles(const QStringList &fileNames)
 {
     bool changed = false;
@@ -138,6 +151,7 @@ std::unique_ptr<World> WorldManager::privateLoadWorld(const QString &fileName,
     QDir dir = QFileInfo(fileName).dir();
     std::unique_ptr<World> world(new World);
 
+    world->canBeModified = true;
     world->fileName = QFileInfo(fileName).canonicalFilePath();
 
     const QJsonArray maps = object.value(QLatin1String("maps")).toArray();
@@ -156,6 +170,10 @@ std::unique_ptr<World> WorldManager::privateLoadWorld(const QString &fileName,
 
     const QJsonArray patterns = object.value(QLatin1String("patterns")).toArray();
     for (const QJsonValue &value : patterns) {
+
+        // we don't support modifying worlds with patterns
+        world->canBeModified = false;
+
         const QJsonObject patternObject = value.toObject();
 
         World::Pattern pattern;
@@ -212,6 +230,74 @@ World *WorldManager::loadWorld(const QString &fileName, QString *errorString)
     return mWorlds.value(fileName);
 }
 
+bool WorldManager::saveWorld(const QString &fileName, QString* errorString)
+{
+    World* pSavingWorld = nullptr;
+
+    for (auto pWorld : mWorlds)
+    {
+        if (pWorld->fileName == fileName)
+        {
+            pSavingWorld = pWorld;
+            break;
+        }
+    }
+
+    if( !pSavingWorld || !pSavingWorld->canBeModified )
+    {
+        if( errorString )
+        {
+            *errorString = tr("World doesn't support saving");
+        }
+        return false;
+    }
+
+    if( !pSavingWorld->isDirty )
+    {
+        if( errorString )
+        {
+            *errorString = tr("World doesn't need to be saved");
+        }
+        return false;
+    }
+
+    QJsonArray maps;
+    for ( const World::MapEntry& map : pSavingWorld->maps )
+    {
+        QJsonObject jsonMap;
+
+        QDir dir = QFileInfo(fileName).dir();
+        QFileInfo mapFile = QFileInfo(map.fileName);
+
+        QString relativeFileName = QDir::cleanPath(dir.relativeFilePath(map.fileName));
+        jsonMap.insert(QLatin1String("fileName"), QJsonValue::fromVariant(relativeFileName));
+        jsonMap.insert(QLatin1String("x"), QJsonValue::fromVariant(map.rect.x()));
+        jsonMap.insert(QLatin1String("y"), QJsonValue::fromVariant(map.rect.y()));
+        jsonMap.insert(QLatin1String("width"), QJsonValue::fromVariant(map.rect.width()));
+        jsonMap.insert(QLatin1String("height"), QJsonValue::fromVariant(map.rect.height()));
+        maps.push_back(jsonMap);
+    }
+
+    QJsonObject document;
+    document.insert(QLatin1String("maps"), maps);
+    document.insert(QLatin1String("type"), QJsonValue::fromVariant(QLatin1String("world")));
+    QJsonDocument doc(document);
+    qDebug() << doc.toJson();
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        if (errorString)
+            *errorString = tr("Could not open file for reading.");
+        return false;
+    }
+
+    file.write(doc.toJson());
+    file.close();
+
+    pSavingWorld->isDirty = false;
+    return true;
+}
+
 /**
  * Unloads the world with the given \a fileName.
  */
@@ -233,7 +319,24 @@ const World *WorldManager::worldForMap(const QString &fileName) const
     return nullptr;
 }
 
-void WorldManager::moveMap( const QString &fileName, QPoint offset )
+bool WorldManager::mapCanBeMoved(const QString &fileName) const
+{
+    for (auto world : mWorlds)
+    {
+        int index = world->mapIndex(fileName);
+        if( index >= 0 )
+        {
+            return true;
+        }
+        if( !world->canBeModified )
+        {
+            continue;
+        }
+    }
+    return false;
+}
+
+void WorldManager::setMapRect(const QString &fileName, const QRect& rect)
 {
     for (auto world : mWorlds)
     {
@@ -242,16 +345,19 @@ void WorldManager::moveMap( const QString &fileName, QPoint offset )
         {
             continue;
         }
-        world->moveMap(index, offset);
+        if( !world->canBeModified )
+        {
+            continue;
+        }
+        world->setMapRect(index, rect);
     }
     emit worldsChanged();
 }
 
-bool World::moveMap(int mapIndex, QPoint &offset)
+bool World::setMapRect(int mapIndex, const QRect &rect)
 {
     World::MapEntry& entry = maps[mapIndex];
-    entry.rect.moveLeft( entry.rect.left() + offset.x() );
-    entry.rect.moveTop( entry.rect.top() + offset.y() );
+    entry.rect = rect;
     isDirty = true;
     return true;
 }

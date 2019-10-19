@@ -67,7 +67,7 @@ namespace Tiled {
 
 WorldMoveMapTool::WorldMoveMapTool(QObject *parent)
     : AbstractWorldTool(tr("Move Map"),
-          QIcon(QLatin1String(":images/22/tool-select-objects.png")),
+          QIcon(QLatin1String(":images/22/world-move-tool.png")),
           QKeySequence(tr("N")),
           parent)
     , mSelectionRectangle(new SelectionRectangle)
@@ -81,7 +81,6 @@ WorldMoveMapTool::~WorldMoveMapTool()
 void WorldMoveMapTool::activate(MapScene *scene)
 {
     AbstractWorldTool::activate(scene);
-
 }
 
 void WorldMoveMapTool::deactivate(MapScene *scene)
@@ -99,8 +98,7 @@ void WorldMoveMapTool::keyPressed(QKeyEvent *event)
     case Qt::Key_Left:  moveBy = QPointF(-1, 0); break;
     case Qt::Key_Right: moveBy = QPointF(1, 0); break;
     case Qt::Key_Escape:
-        if (!mapDocument()->selectedObjects().isEmpty())
-            mapDocument()->setSelectedObjects(QList<MapObject*>());
+        abortMoving();
         return;
     default:
         AbstractWorldTool::keyPressed(event);
@@ -127,18 +125,11 @@ void WorldMoveMapTool::keyPressed(QKeyEvent *event)
     }
 
     QPoint offset =  QPoint( currentTileSize().x() * (int) moveBy.x(),  currentTileSize().y() * (int) moveBy.y());
-    WorldManager::instance().moveMap(mapDocument()->fileName(), offset);
+    //WorldManager::instance().moveMap(mapDocument()->fileName(), offset);
 
-//    QUndoStack *undoStack = mapDocument()->undoStack();
-//    undoStack->beginMacro(tr("Move %n Object(s)", "", objects.size()));
-//    int i = 0;
-//    for (MapObject *object : objects) {
-//        const QPointF oldPos = object->position();
-//        const QPointF newPos = oldPos + moveBy;
-//        undoStack->push(new MoveMapObject(mapDocument(), object, newPos, oldPos));
-//        ++i;
-//    }
-//    undoStack->endMacro();
+    QRect rect = currentMapRect();
+    rect.setTopLeft(rect.topLeft() + offset);
+    WorldManager::instance().setMapRect(mapDocument()->fileName(), rect);
 }
 
 void WorldMoveMapTool::mouseEntered()
@@ -160,8 +151,7 @@ static QGraphicsView *findView(QGraphicsSceneEvent *event)
 
 void WorldMoveMapTool::mousePressed(QGraphicsSceneMouseEvent *event)
 {
-    const World* world = currentConstWorld();
-    if (!world)
+    if( !currentMapCanBeMoved() )
     {
         return;
     }
@@ -180,7 +170,7 @@ void WorldMoveMapTool::mousePressed(QGraphicsSceneMouseEvent *event)
             // create drag preview rect
             QRect mapRect = currentMapRect();
             const QPointF topLeft = QPointF(mDragOffset.x(), mDragOffset.y());
-            QPointF sizeInPoints = renderer->tileToScreenCoords(QPointF(mapRect.size().width(), mapRect.size().height()));
+            QPointF sizeInPoints = renderer->pixelToScreenCoords(QPointF(mapRect.size().width(), mapRect.size().height()));
             QSize size(sizeInPoints.x(), sizeInPoints.y());
             mDragPreviewRect = QRectF(topLeft, size);
 
@@ -217,7 +207,7 @@ void WorldMoveMapTool::mouseMoved(const QPointF &pos,
 
     // snap to tilezie
     mDragOffset.setX( mDragOffset.x() - (mDragOffset.x())  % mapDocument()->map()->tileWidth());
-    mDragOffset.setY( mDragOffset.y() - (mDragOffset.y())  % mapDocument()->map()->tileWidth());
+    mDragOffset.setY( mDragOffset.y() - (mDragOffset.y())  % mapDocument()->map()->tileHeight());
 
     // update preview
     mDragPreviewRect.moveTopLeft( renderer->pixelToScreenCoords( mDragOffset ) );
@@ -234,7 +224,9 @@ void WorldMoveMapTool::mouseReleased(QGraphicsSceneMouseEvent *event)
     mapScene()->removeItem(mSelectionRectangle.get());
     mMousePressed = false;
 
-    WorldManager::instance().moveMap(mapDocument()->fileName(), mDragOffset);
+    QRect rect = currentMapRect();
+    rect.setTopLeft(rect.topLeft() + mDragOffset);
+    WorldManager::instance().setMapRect(mapDocument()->fileName(), rect);
     refreshCursor();
 }
 
@@ -251,13 +243,27 @@ void WorldMoveMapTool::refreshCursor()
 {
     Qt::CursorShape cursorShape = Qt::ArrowCursor;
 
-    if( mMousePressed )
+    if ( mMousePressed )
     {
         cursorShape = Qt::SizeAllCursor;
     }
 
-    if (cursor().shape() != cursorShape)
+    if ( cursor().shape() != cursorShape )
+    {
         setCursor(cursorShape);
+    }
+}
+
+void WorldMoveMapTool::abortMoving()
+{
+    if ( !mMousePressed )
+    {
+        return;
+    }
+
+    mapScene()->removeItem(mSelectionRectangle.get());
+    mMousePressed = false;
+    refreshCursor();
 }
 
 }
