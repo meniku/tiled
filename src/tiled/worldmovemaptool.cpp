@@ -22,8 +22,6 @@
 #include "worldmanager.h"
 
 #include "changeevents.h"
-#include "changepolygon.h"
-#include "editpolygontool.h"
 #include "geometry.h"
 #include "layer.h"
 #include "map.h"
@@ -36,9 +34,6 @@
 #include "movemapobject.h"
 #include "objectgroup.h"
 #include "preferences.h"
-#include "raiselowerhelper.h"
-#include "resizemapobject.h"
-#include "rotatemapobject.h"
 #include "selectionrectangle.h"
 #include "snaphelper.h"
 #include "tile.h"
@@ -181,7 +176,10 @@ void WorldMoveMapTool::mousePressed(QGraphicsSceneMouseEvent *event)
         }
         default:
         {
-            AbstractWorldTool::mousePressed(event);
+            if( !mMousePressed )
+            {
+                AbstractWorldTool::mousePressed(event);
+            }
             break;
         }
     }

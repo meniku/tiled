@@ -1012,6 +1012,29 @@ bool MainWindow::confirmAllSave()
             return false;
     }
 
+    QStringList dirtyWorlds = WorldManager::instance().dirtyWorldFiles();
+    for( QString& fileName : dirtyWorlds )
+    {
+        int ret = QMessageBox::warning(
+                this, tr("Unsaved Changes to world"),
+                tr("There are unsaved changes to your world file. Do you want to save the world now?"),
+                QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+
+        switch (ret) {
+        case QMessageBox::Save:
+            if( !WorldManager::instance().saveWorld(fileName) )
+            {
+                return false;
+            }
+            break;
+        case QMessageBox::Discard:
+            break;
+        case QMessageBox::Cancel:
+        default:
+            return false;
+        }
+    }
+
     return true;
 }
 

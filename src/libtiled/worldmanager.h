@@ -71,6 +71,8 @@ struct TILEDSHARED_EXPORT World
 
     int mapIndex(const QString &fileName) const;
     bool setMapRect(int mapIndex, const QRect &rect);
+    bool addMap(const QString &fileName, const QRect &rect);
+    bool removeMap(int mapIndex);
     bool containsMap(const QString &fileName) const;
     QRect mapRect(const QString &fileName) const;
     QVector<MapEntry> allMaps() const;
@@ -103,8 +105,11 @@ public:
 
     const World *worldForMap(const QString &fileName) const;
 
-    void setMapRect( const QString &fileName, const QRect &rect );
-    bool mapCanBeMoved(const QString &fileName) const;
+    void setMapRect(const QString &fileName, const QRect &rect);
+    bool mapCanBeModified(const QString &fileName) const;
+    bool removeMap(const QString &fileName);
+    bool addMap(const World* world, const QString &mapFileName, const QRect &rect);
+
 signals:
     void worldsChanged();
 

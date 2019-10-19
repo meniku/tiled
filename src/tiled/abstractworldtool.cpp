@@ -20,10 +20,12 @@
 
 #include "abstractworldtool.h"
 
+#include "preferences.h"
 #include "documentmanager.h"
 #include "mapdocument.h"
 #include "map.h"
 #include "mapscene.h"
+#include "mapeditor.h"
 #include "maprenderer.h"
 #include "tile.h"
 #include "utils.h"
@@ -52,6 +54,9 @@ AbstractWorldTool::AbstractWorldTool(const QString &name,
     , mMapScene(nullptr)
 {
     AbstractWorldTool::languageChanged();
+
+    WorldManager &worldManager = WorldManager::instance();
+    connect(&worldManager, &WorldManager::worldsChanged, this, &AbstractWorldTool::updateEnabledState);
 }
 
 void AbstractWorldTool::activate(MapScene *scene)
@@ -93,8 +98,7 @@ void AbstractWorldTool::mouseMoved(const QPointF &pos,
 void AbstractWorldTool::mousePressed(QGraphicsSceneMouseEvent *event)
 {
     if (event->button() == Qt::RightButton) {
-        //showContextMenu(topMostMapObjectAt(event->scenePos()),
-        //                event->screenPos());
+        showContextMenu(event->screenPos());
     }
 }
 
@@ -119,7 +123,7 @@ bool AbstractWorldTool::currentMapCanBeMoved() const
     {
         return false;
     }
-    return WorldManager::instance().mapCanBeMoved( mapDocument()->fileName() );
+    return WorldManager::instance().mapCanBeModified( mapDocument()->fileName() );
 }
 
 QRect AbstractWorldTool::currentMapRect() const
@@ -157,130 +161,60 @@ QPoint AbstractWorldTool::currentTileSize()
  * Shows the context menu for map objects. The menu allows you to duplicate and
  * remove the map objects, or to edit their properties.
  */
-void AbstractWorldTool::showContextMenu(MapObject *clickedObject,
-                                         QPoint screenPos)
+void AbstractWorldTool::showContextMenu(QPoint screenPos)
 {
-//    const QList<MapObject*> &selectedObjects = mapDocument()->selectedObjects();
+    mMousePos = mapDocument()->renderer()->screenToPixelCoords(screenPos).toPoint();
 
-//    if (clickedObject && !selectedObjects.contains(clickedObject))
-//        mapDocument()->setSelectedObjects({ clickedObject });
+    QMenu menu;
+    QAction *removeFromWorldAction = menu.addAction(tr("Remove current map from world"),
+                                              this, &AbstractWorldTool::removeFromWorld, QKeySequence(tr("R") ) );
+    QAction *addToWorldAction = menu.addAction(tr("Add a map to the world"),
+                                              this, &AbstractWorldTool::addToWorld, QKeySequence(tr("A") ) );
 
-//    if (selectedObjects.isEmpty())
-//        return;
+    removeFromWorldAction->setIcon(QIcon(QLatin1String(":/images/16/remove.png")));
+    addToWorldAction->setIcon(QIcon(QLatin1String(":/images/16/add.png")));
 
-//    QMenu menu;
-//    QAction *duplicateAction = menu.addAction(tr("Duplicate %n Object(s)", "", selectedObjects.size()),
-//                                              this, &AbstractObjectTool::duplicateObjects);
-//    QAction *removeAction = menu.addAction(tr("Remove %n Object(s)", "", selectedObjects.size()),
-//                                           this, &AbstractObjectTool::removeObjects);
+    QAction *action = menu.exec(screenPos);
+    if (!action)
+        return;
 
-//    duplicateAction->setIcon(QIcon(QLatin1String(":/images/16/stock-duplicate-16.png")));
-//    removeAction->setIcon(QIcon(QLatin1String(":/images/16/edit-delete.png")));
+}
 
-//    bool anyTileObjectSelected = std::any_of(selectedObjects.begin(),
-//                                             selectedObjects.end(),
-//                                             isTileObject);
+void AbstractWorldTool::addToWorld()
+{
+    const World* constWorld = currentConstWorld();
+    if( ! constWorld )
+    {
+        return;
+    }
 
-//    if (anyTileObjectSelected) {
-//        auto resetTileSizeAction = menu.addAction(tr("Reset Tile Size"), this, &AbstractObjectTool::resetTileSize);
-//        resetTileSizeAction->setEnabled(std::any_of(selectedObjects.begin(),
-//                                                    selectedObjects.end(),
-//                                                    isResizedTileObject));
+    QDir dir = QFileInfo(constWorld->fileName).dir();
 
-//        auto changeTileAction = menu.addAction(tr("Replace Tile"), this, &AbstractObjectTool::changeTile);
-//        changeTileAction->setEnabled(tile() && (!selectedObjects.first()->isTemplateBase() ||
-//                                                tile()->tileset()->isExternal()));
-//    }
+    QString lastPath = QDir::cleanPath(dir.absolutePath());
+    QString filter = tr("All Files (*);;");
+    QString mapFilesFilter = tr("Map Files (*.tmx)");
+    filter.append(mapFilesFilter);
 
-//    // Create action for replacing an object with a template
-//    auto replaceTemplateAction = menu.addAction(tr("Replace With Template"), this, &AbstractObjectTool::replaceObjectsWithTemplate);
-//    auto selectedTemplate = objectTemplate();
+    MapEditor* mapEditor = static_cast<MapEditor*>(DocumentManager::instance()->editor(Document::DocumentType::MapDocumentType));
+    QString mapFile = QFileDialog::getOpenFileName(mapEditor->editorWidget(), tr("Load Map"), lastPath,
+                                                     filter, &mapFilesFilter);
+    if (mapFile.isEmpty())
+        return;
 
-//    if (selectedTemplate) {
-//        QString name = QFileInfo(selectedTemplate->fileName()).fileName();
-//        replaceTemplateAction->setText(tr("Replace With Template \"%1\"").arg(name));
-//    }
-//    if (!selectedTemplate || !mapDocument()->templateAllowed(selectedTemplate))
-//        replaceTemplateAction->setEnabled(false);
+    QSize size(0,0);
+    QRect rect = QRect(snapPoint(mMousePos), size);
 
-//    if (selectedObjects.size() == 1) {
-//        MapObject *currentObject = selectedObjects.first();
+    WorldManager::instance().addMap( constWorld, mapFile, rect );
+}
 
-//        if (!(currentObject->isTemplateBase() || currentObject->isTemplateInstance())) {
-//            const Cell cell = selectedObjects.first()->cell();
-//            // Saving objects with embedded tilesets is disabled
-//            if (cell.isEmpty() || cell.tileset()->isExternal())
-//                menu.addAction(tr("Save As Template"), this, &AbstractObjectTool::saveSelectedObject);
-//        }
+QPoint AbstractWorldTool::snapPoint(QPoint point) const
+{
+    point.setX( point.x() - (point.x())  % mapDocument()->map()->tileWidth());
+    point.setY( point.y() - (point.y())  % mapDocument()->map()->tileHeight());
+    return point;
+}
 
-//        if (currentObject->isTemplateBase()) { // Hide this operations for template base
-//            duplicateAction->setVisible(false);
-//            removeAction->setVisible(false);
-//            replaceTemplateAction->setVisible(false);
-//        }
-//    }
-
-//    bool anyTemplateInstanceSelected = std::any_of(selectedObjects.begin(),
-//                                                   selectedObjects.end(),
-//                                                   isTemplateInstance);
-
-//    if (anyTemplateInstanceSelected) {
-//        menu.addAction(tr("Detach"), this, &AbstractObjectTool::detachSelectedObjects);
-
-//        auto resetToTemplateAction = menu.addAction(tr("Reset Template Instance(s)"), this, &AbstractObjectTool::resetInstances);
-//        resetToTemplateAction->setEnabled(std::any_of(selectedObjects.begin(),
-//                                                      selectedObjects.end(),
-//                                                      isChangedTemplateInstance));
-//    }
-
-//    menu.addSeparator();
-//    menu.addAction(tr("Flip Horizontally"), this, &AbstractObjectTool::flipHorizontally, QKeySequence(tr("X")));
-//    menu.addAction(tr("Flip Vertically"), this, &AbstractObjectTool::flipVertically, QKeySequence(tr("Y")));
-
-//    ObjectGroup *sameObjectGroup = RaiseLowerHelper::sameObjectGroup(selectedObjects);
-//    if (sameObjectGroup && sameObjectGroup->drawOrder() == ObjectGroup::IndexOrder) {
-//        menu.addSeparator();
-//        menu.addAction(tr("Raise Object"), this, &AbstractObjectTool::raise, QKeySequence(tr("PgUp")));
-//        menu.addAction(tr("Lower Object"), this, &AbstractObjectTool::lower, QKeySequence(tr("PgDown")));
-//        menu.addAction(tr("Raise Object to Top"), this, &AbstractObjectTool::raiseToTop, QKeySequence(tr("Home")));
-//        menu.addAction(tr("Lower Object to Bottom"), this, &AbstractObjectTool::lowerToBottom, QKeySequence(tr("End")));
-//    }
-
-//    auto objectGroups = mapDocument()->map()->objectGroups();
-//    if (!objectGroups.isEmpty()) {
-//        menu.addSeparator();
-//        QMenu *moveToLayerMenu = menu.addMenu(tr("Move %n Object(s) to Layer",
-//                                                 "", selectedObjects.size()));
-//        for (Layer *layer : objectGroups) {
-//            ObjectGroup *objectGroup = static_cast<ObjectGroup*>(layer);
-//            QAction *action = moveToLayerMenu->addAction(objectGroup->name());
-//            action->setData(QVariant::fromValue(objectGroup));
-//            action->setEnabled(objectGroup != sameObjectGroup);
-//        }
-//    }
-
-//    menu.addSeparator();
-//    QIcon propIcon(QLatin1String(":images/16/document-properties.png"));
-//    QAction *propertiesAction = menu.addAction(propIcon,
-//                                               tr("Object &Properties..."));
-
-//    Utils::setThemeIcon(removeAction, "edit-delete");
-//    Utils::setThemeIcon(propertiesAction, "document-properties");
-
-//    QAction *action = menu.exec(screenPos);
-//    if (!action)
-//        return;
-
-//    if (action == propertiesAction) {
-//        MapObject *mapObject = selectedObjects.first();
-//        mapDocument()->setCurrentObject(mapObject);
-//        emit mapDocument()->editCurrentObject();
-//        return;
-//    }
-
-//    if (ObjectGroup *objectGroup = action->data().value<ObjectGroup*>()) {
-//        const auto selectedObjectsCopy = selectedObjects;
-//        mapDocument()->moveObjectsToGroup(selectedObjects, objectGroup);
-//        mapDocument()->setSelectedObjects(selectedObjectsCopy);
-//    }
+void AbstractWorldTool::removeFromWorld()
+{
+    WorldManager::instance().removeMap( mapDocument()->fileName() );
 }

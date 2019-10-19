@@ -28,7 +28,7 @@ namespace Tiled {
 
 class MapObject;
 class ObjectGroup;
-class World;
+struct World;
 class MapObjectItem;
 
 /**
@@ -67,17 +67,20 @@ protected:
      */
     void updateEnabledState() override;
 
+    void addToWorld();
+    void removeFromWorld();
+
+    QPoint snapPoint(QPoint point) const;
     bool currentMapCanBeMoved() const;
     QRect currentMapRect() const;
     const World *currentConstWorld() const;
     QPoint currentTileSize();
     MapScene *mapScene() const { return mMapScene; }
 
-private:
-    void showContextMenu(MapObject *clickedObject,
-                         QPoint screenPos);
+    void showContextMenu(QPoint screenPos);
 
     MapScene *mMapScene;
+    QPoint mMousePos;
 };
 
 } // namespace Tiled

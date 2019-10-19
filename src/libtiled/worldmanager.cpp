@@ -152,6 +152,7 @@ std::unique_ptr<World> WorldManager::privateLoadWorld(const QString &fileName,
     std::unique_ptr<World> world(new World);
 
     world->canBeModified = true;
+    world->isDirty = false;
     world->fileName = QFileInfo(fileName).canonicalFilePath();
 
     const QJsonArray maps = object.value(QLatin1String("maps")).toArray();
@@ -285,9 +286,12 @@ bool WorldManager::saveWorld(const QString &fileName, QString* errorString)
     qDebug() << doc.toJson();
 
     QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
         if (errorString)
+        {
             *errorString = tr("Could not open file for reading.");
+        }
         return false;
     }
 
@@ -319,7 +323,7 @@ const World *WorldManager::worldForMap(const QString &fileName) const
     return nullptr;
 }
 
-bool WorldManager::mapCanBeMoved(const QString &fileName) const
+bool WorldManager::mapCanBeModified(const QString &fileName) const
 {
     for (auto world : mWorlds)
     {
@@ -354,10 +358,75 @@ void WorldManager::setMapRect(const QString &fileName, const QRect& rect)
     emit worldsChanged();
 }
 
+bool WorldManager::removeMap(const QString &fileName)
+{
+    for (auto world : mWorlds)
+    {
+        int index = world->mapIndex(fileName);
+        if( index < 0 )
+        {
+            continue;
+        }
+        if( !world->canBeModified )
+        {
+            continue;
+        }
+        world->removeMap(index);
+        emit worldsChanged();
+        return true;
+    }
+
+    return false;
+}
+
+bool WorldManager::addMap(const World* world, const QString &mapFileName, const QRect &rect)
+{
+    if( !world )
+    {
+        return false;
+    }
+
+    if( worldForMap(mapFileName) )
+    {
+        return false;
+    }
+
+    for (auto nonConstWorld : mWorlds)
+    {
+        if( nonConstWorld == world )
+        {
+            nonConstWorld->addMap(mapFileName, rect);
+            emit worldsChanged();
+            return true;
+        }
+    }
+    return false;
+}
+
 bool World::setMapRect(int mapIndex, const QRect &rect)
 {
     World::MapEntry& entry = maps[mapIndex];
+    if( entry.rect != rect )
+    {
+        entry.rect = rect;
+        isDirty = true;
+    }
+    return true;
+}
+
+bool World::removeMap(int mapIndex)
+{
+    maps.removeAt(mapIndex);
+    isDirty = true;
+    return true;
+}
+
+bool World::addMap(const QString &fileName, const QRect &rect)
+{
+    MapEntry entry;
     entry.rect = rect;
+    entry.fileName = fileName;
+    maps.append(entry);
     isDirty = true;
     return true;
 }
