@@ -114,7 +114,7 @@ void AbstractWorldTool::populateToolBar(QToolBar *toolBar)
 
 void AbstractWorldTool::updateEnabledState()
 {
-    setEnabled(mapDocument() != nullptr);
+    setEnabled(mapDocument() != nullptr && WorldManager::instance().loadedWorldFiles().count() > 0);
 }
 
 bool AbstractWorldTool::currentMapCanBeMoved() const

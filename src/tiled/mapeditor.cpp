@@ -195,8 +195,6 @@ MapEditor::MapEditor(QObject *parent)
     CreateObjectTool *polygonObjectsTool = new CreatePolygonObjectTool(this);
     CreateObjectTool *textObjectsTool = new CreateTextObjectTool(this);
 
-    mToolsToolBar->addAction(mToolManager->registerTool(new WorldMoveMapTool(this)));
-    mToolsToolBar->addSeparator();
     mToolsToolBar->addAction(mToolManager->registerTool(mStampBrush));
     mToolsToolBar->addAction(mToolManager->registerTool(mTerrainBrush));
     mToolsToolBar->addAction(mToolManager->registerTool(mWangBrush));
@@ -217,6 +215,7 @@ MapEditor::MapEditor(QObject *parent)
     mToolsToolBar->addAction(mToolManager->registerTool(templatesTool));
     mToolsToolBar->addAction(mToolManager->registerTool(textObjectsTool));
     mToolsToolBar->addSeparator();
+    mToolsToolBar->addAction(mToolManager->registerTool(new WorldMoveMapTool(this)));
     mToolsToolBar->addAction(mToolManager->registerTool(new LayerOffsetTool(this)));
     mToolsToolBar->addSeparator();  // todo: hide when there are no tool extensions
 

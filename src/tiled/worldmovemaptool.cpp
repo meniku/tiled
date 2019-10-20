@@ -226,7 +226,7 @@ void WorldMoveMapTool::mouseReleased(QGraphicsSceneMouseEvent *event)
 
 void WorldMoveMapTool::languageChanged()
 {
-    WorldMoveMapTool::languageChanged();
+    AbstractWorldTool::languageChanged();
 
     setName(tr("Move Map"));
     setShortcut(QKeySequence(tr("N")));
