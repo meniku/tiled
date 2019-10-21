@@ -1,6 +1,6 @@
 /*
- * abstractobjecttool.h
- * Copyright 2011, Thorbjørn Lindeijer <thorbjorn@lindeijer.nl>
+ * abstractworldtool.h
+ * Copyright 2019, Nils Kuebler <nils-kuebler@web.de>
  *
  * This file is part of Tiled.
  *

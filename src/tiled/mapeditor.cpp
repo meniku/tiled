@@ -84,6 +84,7 @@
 #include "wangset.h"
 #include "zoomable.h"
 #include "worldmovemaptool.h"
+#include "worldmanager.h"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -324,6 +325,9 @@ MapEditor::MapEditor(QObject *parent)
 
     QSettings *settings = Preferences::instance()->settings();
     mMapStates = settings->value(QLatin1String(MAPSTATES_KEY)).toMap();
+
+    connect(&WorldManager::instance(), &WorldManager::worldsChanged,
+            this, &MapEditor::updateActiveUndoStack);
 }
 
 MapEditor::~MapEditor()

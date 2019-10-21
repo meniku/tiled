@@ -203,6 +203,36 @@ std::unique_ptr<World> WorldManager::privateLoadWorld(const QString &fileName,
     return world;
 }
 
+World *WorldManager::addEmptyWorld(const QString &fileName, QString *errorString)
+{
+    World* world = new World();
+    world->canBeModified = true;
+    world->isDirty = true;
+    world->fileName = fileName;
+    world->onlyShowAdjacentMaps = false;
+    world->canBeModified = true;
+
+    if (mWorlds.contains(fileName)) {
+        if(errorString) {
+            *errorString = QLatin1String("World already loaded");
+        }
+        return nullptr;
+    } else {
+        mFileSystemWatcher.addPath(fileName);
+    }
+
+    mWorlds.insert(fileName, world);
+
+
+    if( saveWorld(fileName, errorString) ) {
+        emit worldsChanged();
+        return mWorlds.value(fileName);
+    } else {
+        unloadWorld(fileName);
+        return nullptr;
+    }
+}
+
 /**
  * Loads the world with the given \a fileName.
  *
@@ -279,14 +309,14 @@ bool WorldManager::saveWorld(const QString &fileName, QString* errorString)
     QJsonObject document;
     document.insert(QLatin1String("maps"), maps);
     document.insert(QLatin1String("type"), QJsonValue::fromVariant(QLatin1String("world")));
+    document.insert(QLatin1String("onlyShowAdjacentMaps"), QJsonValue::fromVariant(pSavingWorld->onlyShowAdjacentMaps));
+
     QJsonDocument doc(document);
     qDebug() << doc.toJson();
 
     QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        if (errorString)
-        {
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        if (errorString) {
             *errorString = tr("Could not open file for reading.");
         }
         return false;
@@ -306,7 +336,6 @@ void WorldManager::unloadWorld(const QString &fileName)
 {
     std::unique_ptr<World> world { mWorlds.take(fileName) };
     if (world) {
-
         mFileSystemWatcher.removePath(fileName);
         emit worldsChanged();
         emit worldUnloaded(fileName);
@@ -324,15 +353,12 @@ const World *WorldManager::worldForMap(const QString &fileName) const
 
 bool WorldManager::mapCanBeModified(const QString &fileName) const
 {
-    for (auto world : mWorlds)
-    {
+    for (auto world : mWorlds) {
         int index = world->mapIndex(fileName);
-        if( index >= 0 )
-        {
+        if(index >= 0) {
             return true;
         }
-        if( !world->canBeModified )
-        {
+        if(!world->canBeModified) {
             continue;
         }
     }
@@ -341,15 +367,12 @@ bool WorldManager::mapCanBeModified(const QString &fileName) const
 
 void WorldManager::setMapRect(const QString &fileName, const QRect& rect)
 {
-    for (auto world : mWorlds)
-    {
+    for (auto world : mWorlds) {
         int index = world->mapIndex(fileName);
-        if( index < 0 )
-        {
+        if(index < 0) {
             continue;
         }
-        if( !world->canBeModified )
-        {
+        if(!world->canBeModified) {
             continue;
         }
         world->setMapRect(index, rect);
@@ -359,15 +382,12 @@ void WorldManager::setMapRect(const QString &fileName, const QRect& rect)
 
 bool WorldManager::removeMap(const QString &fileName)
 {
-    for (auto world : mWorlds)
-    {
+    for (auto world : mWorlds) {
         int index = world->mapIndex(fileName);
-        if( index < 0 )
-        {
+        if(index < 0) {
             continue;
         }
-        if( !world->canBeModified )
-        {
+        if(!world->canBeModified) {
             continue;
         }
         world->removeMap(index);
@@ -380,15 +400,12 @@ bool WorldManager::removeMap(const QString &fileName)
 
 bool WorldManager::addMap(const QString &fileName, const QString &mapFileName, const QRect &rect)
 {
-    if( worldForMap(mapFileName) )
-    {
+    if(worldForMap(mapFileName)) {
         return false;
     }
 
-    for (auto worlds : mWorlds)
-    {
-        if( worlds->fileName == fileName )
-        {
+    for (auto worlds : mWorlds) {
+        if(worlds->fileName == fileName) {
             worlds->addMap(mapFileName, rect);
             emit worldsChanged();
             return true;
@@ -400,8 +417,7 @@ bool WorldManager::addMap(const QString &fileName, const QString &mapFileName, c
 bool World::setMapRect(int mapIndex, const QRect &rect)
 {
     World::MapEntry& entry = maps[mapIndex];
-    if( entry.rect != rect )
-    {
+    if(entry.rect != rect) {
         entry.rect = rect;
         isDirty = true;
     }
@@ -427,10 +443,8 @@ bool World::addMap(const QString &fileName, const QRect &rect)
 
 int World::mapIndex(const QString &fileName) const
 {
-    for (int i = 0; i < maps.length(); i++ )
-    {
-        if (maps[i].fileName == fileName)
-        {
+    for (int i = 0; i < maps.length(); i++ ) {
+        if (maps[i].fileName == fileName) {
             return i;
         }
     }

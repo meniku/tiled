@@ -126,6 +126,7 @@
     </widget>
     <addaction name="actionAddExternalTileset"/>
     <addaction name="separator"/>
+    <addaction name="actionNewWorld" />
     <addaction name="actionLoadWorld"/>
     <addaction name="menuUnloadWorld"/>
     <addaction name="menuSaveWorld"/>
@@ -638,6 +639,11 @@
   <action name="actionLoadWorld">
    <property name="text">
     <string>Load World...</string>
+   </property>
+  </action>
+  <action name="actionNewWorld">
+   <property name="text">
+    <string>New World...</string>
    </property>
   </action>
   <action name="actionHighlightHoveredObject">

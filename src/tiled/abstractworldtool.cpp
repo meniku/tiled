@@ -1,6 +1,6 @@
 /*
- * abstractobjecttool.cpp
- * Copyright 2011, Thorbjørn Lindeijer <thorbjorn@lindeijer.nl>
+ * abstractworldtool.cpp
+ * Copyright 2019, Nils Kuebler <nils-kuebler@web.de>
  *
  * This file is part of Tiled.
  *
@@ -206,8 +206,6 @@ QPoint AbstractWorldTool::currentTileSize()
     return QPoint( size.width(), size.height() );
 }
 
-
-
 /**
  * Shows the context menu for map objects. The menu allows you to duplicate and
  * remove the map objects, or to edit their properties.
@@ -255,7 +253,7 @@ void AbstractWorldTool::addAnotherMapToWorld()
         return;
     }
 
-    QDir dir = QFileInfo(constWorld->fileName).dir();
+    QDir dir = QFileInfo(mapDocument()->fileName()).dir();
 
     QString lastPath = QDir::cleanPath(dir.absolutePath());
     QString filter = tr("All Files (*);;");
@@ -267,6 +265,12 @@ void AbstractWorldTool::addAnotherMapToWorld()
                                                      filter, &mapFilesFilter);
     if (mapFile.isEmpty())
         return;
+
+    const World* constWorldForSelectedMap =  WorldManager::instance().worldForMap(mapFile);
+    if( constWorldForSelectedMap ) {
+        DocumentManager::instance()->openFile(mapFile);
+        return;
+    }
 
     QSize size(0,0);
     QRect rect = QRect(snapPoint(mMousePos), size);
@@ -285,7 +289,8 @@ void AbstractWorldTool::addToWorld( const QString& fileName )
     size.setWidth(size.width() * mapDocument()->map()->tileWidth());
     size.setHeight(size.height() * mapDocument()->map()->tileHeight());
     QRect rect = QRect( QPoint(0,0), size);
-    undoStack()->push(new AddMapCommand(fileName, mapDocument()->fileName(), rect));
+    QUndoStack* undoStack = DocumentManager::instance()->ensureWorldDocument(fileName)->undoStack();
+    undoStack->push(new AddMapCommand(fileName, mapDocument()->fileName(), rect));
 }
 
 QUndoStack *AbstractWorldTool::undoStack()
@@ -300,8 +305,8 @@ QUndoStack *AbstractWorldTool::undoStack()
 
 QPoint AbstractWorldTool::snapPoint(QPoint point) const
 {
-    point.setX( point.x() - (point.x())  % mapDocument()->map()->tileWidth());
-    point.setY( point.y() - (point.y())  % mapDocument()->map()->tileHeight());
+    point.setX(point.x() - (point.x())  % mapDocument()->map()->tileWidth());
+    point.setY(point.y() - (point.y())  % mapDocument()->map()->tileHeight());
     return point;
 }
 

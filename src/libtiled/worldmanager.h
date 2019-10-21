@@ -95,6 +95,7 @@ public:
     static WorldManager &instance();
     static void deleteInstance();
 
+    World *addEmptyWorld(const QString &fileName, QString *errorString);
     World *loadWorld(const QString &fileName, QString *errorString = nullptr);
     void unloadWorld(const QString &fileName);
     bool saveWorld(const QString &fileName, QString *errorString = nullptr);

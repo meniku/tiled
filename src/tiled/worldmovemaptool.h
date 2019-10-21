@@ -1,6 +1,6 @@
 /*
- * objectselectiontool.h
- * Copyright 2010-2013, Thorbjørn Lindeijer <thorbjorn@lindeijer.nl>
+ * worldmovemaptool.h
+ * Copyright 2019, Nils Kuebler <nils-kuebler@web.de>
  *
  * This file is part of Tiled.
  *

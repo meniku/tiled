@@ -247,6 +247,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     ActionManager::registerAction(mUi->actionLabelsForAllObjects, "LabelsForAllObjects");
     ActionManager::registerAction(mUi->actionLabelsForSelectedObjects, "LabelsForSelectedObjects");
     ActionManager::registerAction(mUi->actionLoadWorld, "LoadWorld");
+    ActionManager::registerAction(mUi->actionNewWorld, "NewWorld");
     ActionManager::registerAction(mUi->actionMapProperties, "MapProperties");
     ActionManager::registerAction(mUi->actionNewMap, "NewMap");
     ActionManager::registerAction(mUi->actionNewTileset, "NewTileset");
@@ -537,6 +538,28 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
                 mSettings.setValue(QLatin1String("LoadedWorlds"), QVariant(worldFiles));
                 mUi->menuUnloadWorld->setEnabled(!worldFiles.isEmpty());
             });
+        }
+    });
+    connect(mUi->actionNewWorld, &QAction::triggered, this, [this,preferences]{
+        QString lastPath = preferences->lastPath(Preferences::WorldFile);
+        QString filter = tr("All Files (*);;");
+        QString worldFilesFilter = tr("World files (*.world)");
+        filter.append(worldFilesFilter);
+
+        MapEditor* mapEditor = static_cast<MapEditor*>(DocumentManager::instance()->editor(Document::DocumentType::MapDocumentType));
+        QString worldFile = QFileDialog::getSaveFileName(mapEditor->editorWidget(), tr("New Map"), lastPath,
+                                                         filter, &worldFilesFilter);
+        if (worldFile.isEmpty() || QFile::exists(worldFile))
+            return;
+
+        preferences->setLastPath(Preferences::WorldFile, QFileInfo(worldFile).path());
+        QString errorString;
+        if (!WorldManager::instance().addEmptyWorld(worldFile, &errorString)) {
+            QMessageBox::critical(this, tr("Error Creataing World"), errorString);
+        } else {
+            const auto worldFiles = WorldManager::instance().loadedWorldFiles();
+            mSettings.setValue(QLatin1String("LoadedWorlds"), QVariant(worldFiles));
+            mUi->menuUnloadWorld->setEnabled(!worldFiles.isEmpty());
         }
     });
     connect(mUi->menuSaveWorld, &QMenu::aboutToShow, this, [this] {

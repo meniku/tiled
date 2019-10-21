@@ -1,6 +1,6 @@
 /*
- * objectselectiontool.cpp
- * Copyright 2010-2013, Thorbjørn Lindeijer <thorbjorn@lindeijer.nl>
+ * worldmovemaptool.h
+ * Copyright 2019, Nils Kuebler <nils-kuebler@web.de>
  *
  * This file is part of Tiled.
  *
@@ -80,7 +80,7 @@ private:
 };
 
 WorldMoveMapTool::WorldMoveMapTool(QObject *parent)
-    : AbstractWorldTool(tr("Move Map"),
+    : AbstractWorldTool(tr("World Tool"),
           QIcon(QLatin1String(":images/22/world-move-tool.png")),
           QKeySequence(tr("N")),
           parent)
@@ -234,16 +234,19 @@ void WorldMoveMapTool::mouseReleased(QGraphicsSceneMouseEvent *event)
     mMousePressed = false;
 
     QRect rect = currentMapRect();
-    rect.setTopLeft(rect.topLeft() + mDragOffset);
-    undoStack()->push(new SetMapRectCommand(mapDocument()->fileName(), rect));
-    refreshCursor();
+    if( mDragOffset.x() != 0 || mDragOffset.y() != 0 )
+    {
+        rect.setTopLeft(rect.topLeft() + mDragOffset);
+        undoStack()->push(new SetMapRectCommand(mapDocument()->fileName(), rect));
+        refreshCursor();
+    }
 }
 
 void WorldMoveMapTool::languageChanged()
 {
     AbstractWorldTool::languageChanged();
 
-    setName(tr("Move Map"));
+    setName(tr("World Tool"));
     setShortcut(QKeySequence(tr("N")));
 }
 
