@@ -530,6 +530,8 @@ QtGuiApplication {
         "wangtemplatemodel.h",
         "wangtemplateview.cpp",
         "wangtemplateview.h",
+        "worlddocument.cpp",
+        "worlddocument.h",
         "worldmovemaptool.cpp",
         "worldmovemaptool.h",
         "zoomable.cpp",

@@ -23,6 +23,7 @@
 #include "abstracttool.h"
 
 class QAction;
+class QUndoStack;
 
 namespace Tiled {
 
@@ -59,7 +60,7 @@ public:
 
     void languageChanged() override;
 
-    void populateToolBar(QToolBar*) override;
+    virtual QUndoStack *undoStack() override;
 
 protected:
     /**

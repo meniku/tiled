@@ -50,6 +50,7 @@ class MapEditor;
 class MapView;
 class TilesetDocument;
 class TilesetDocumentsModel;
+class WorldDocument;
 
 /**
  * This class controls the open documents.
@@ -130,6 +131,8 @@ public:
 
     bool eventFilter(QObject *object, QEvent *event) override;
 
+    WorldDocument *ensureWorldDocuemnt(const QString& fileName);
+
 signals:
     void documentCreated(Document *document);
     void documentOpened(Document *document);
@@ -175,6 +178,8 @@ public slots:
     void saveFile();
 
 private:
+    void onWorldUnloaded( const QString& worldFile );
+
     void currentIndexChanged();
     void fileNameChanged(const QString &fileName,
                          const QString &oldFileName);
@@ -202,6 +207,7 @@ private:
     TilesetDocument *openTilesetFile(const QString &path);
 
     QVector<DocumentPtr> mDocuments;
+    QMap<QString, WorldDocument*> mWorldDocuments;
     TilesetDocumentsModel *mTilesetDocumentsModel;
 
     QWidget *mWidget;

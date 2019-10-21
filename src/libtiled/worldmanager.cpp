@@ -49,6 +49,7 @@ WorldManager *WorldManager::mInstance;
 
 WorldManager::WorldManager()
 {
+    mIgnoreFileChangeEventForFile = tr("");
     connect(&mFileSystemWatcher, &FileSystemWatcher::filesChanged,
             this, &WorldManager::reloadWorldFiles);
 }
@@ -92,6 +93,12 @@ void WorldManager::reloadWorldFiles(const QStringList &fileNames)
     for (const QString &fileName : fileNames) {
 
         if (mWorlds.contains(fileName)) {
+
+            if( mIgnoreFileChangeEventForFile == fileName ) {
+                mIgnoreFileChangeEventForFile = tr("");
+                continue;
+            }
+
             auto world = privateLoadWorld(fileName);
             if (world) {
                 std::unique_ptr<World> oldWorld { mWorlds.take(fileName) };
@@ -100,6 +107,7 @@ void WorldManager::reloadWorldFiles(const QStringList &fileNames)
                 mWorlds.insert(fileName, world.release());
 
                 changed = true;
+                emit worldReloaded(fileName);
             }
         }
     }
@@ -279,6 +287,8 @@ bool WorldManager::saveWorld(const QString &fileName, QString* errorString)
         maps.push_back(jsonMap);
     }
 
+    mIgnoreFileChangeEventForFile = fileName;
+
     QJsonObject document;
     document.insert(QLatin1String("maps"), maps);
     document.insert(QLatin1String("type"), QJsonValue::fromVariant(QLatin1String("world")));
@@ -309,8 +319,10 @@ void WorldManager::unloadWorld(const QString &fileName)
 {
     std::unique_ptr<World> world { mWorlds.take(fileName) };
     if (world) {
+
         mFileSystemWatcher.removePath(fileName);
         emit worldsChanged();
+        emit worldUnloaded(fileName);
     }
 }
 
@@ -542,7 +554,6 @@ void World::clearErrorsAndWarnings() const
 {
     emit LoggingInterface::instance().removeIssuesWithContext(this);
 }
-
 
 
 } // namespace Tiled

@@ -18,10 +18,8 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "worldmovemaptool.h"
-#include "worldmanager.h"
-
 #include "changeevents.h"
+#include "documentmanager.h"
 #include "geometry.h"
 #include "layer.h"
 #include "map.h"
@@ -35,6 +33,8 @@
 #include "tileset.h"
 #include "toolmanager.h"
 #include "utils.h"
+#include "worldmovemaptool.h"
+#include "worldmanager.h"
 
 #include <QApplication>
 #include <QGraphicsItem>
@@ -53,7 +53,31 @@ using namespace Tiled;
 
 namespace Tiled {
 
+class SetMapRectCommand : public QUndoCommand
+{
+public:
+    SetMapRectCommand(const QString& mapName,QRect rect) {
+        mMapName = mapName;
+        mRect = rect;
+        WorldManager& manager = WorldManager::instance();
+        mPreviousRect = manager.worldForMap(mMapName)->mapRect(mMapName);
+    }
 
+    void undo() override {
+        WorldManager& manager = WorldManager::instance();
+        manager.setMapRect(mMapName, mPreviousRect);
+    }
+
+    void redo() override {
+        WorldManager& manager = WorldManager::instance();
+        manager.setMapRect(mMapName, mRect);
+    }
+
+private:
+    QString mMapName;
+    QRect mRect;
+    QRect mPreviousRect;
+};
 
 WorldMoveMapTool::WorldMoveMapTool(QObject *parent)
     : AbstractWorldTool(tr("Move Map"),
@@ -115,11 +139,10 @@ void WorldMoveMapTool::keyPressed(QKeyEvent *event)
     }
 
     QPoint offset =  QPoint( currentTileSize().x() * (int) moveBy.x(),  currentTileSize().y() * (int) moveBy.y());
-    //WorldManager::instance().moveMap(mapDocument()->fileName(), offset);
-
     QRect rect = currentMapRect();
     rect.setTopLeft(rect.topLeft() + offset);
-    WorldManager::instance().setMapRect(mapDocument()->fileName(), rect);
+
+    undoStack()->push(new SetMapRectCommand(mapDocument()->fileName(), rect));
 }
 
 void WorldMoveMapTool::mouseEntered()
@@ -220,7 +243,7 @@ void WorldMoveMapTool::mouseReleased(QGraphicsSceneMouseEvent *event)
 
     QRect rect = currentMapRect();
     rect.setTopLeft(rect.topLeft() + mDragOffset);
-    WorldManager::instance().setMapRect(mapDocument()->fileName(), rect);
+    undoStack()->push(new SetMapRectCommand(mapDocument()->fileName(), rect));
     refreshCursor();
 }
 

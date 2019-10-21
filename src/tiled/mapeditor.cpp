@@ -99,6 +99,7 @@
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QToolBar>
+#include <QUndoGroup>
 
 #include "qtcompat_p.h"
 
@@ -650,12 +651,24 @@ void MapEditor::setSelectedTool(AbstractTool *tool)
             mViewWithTool->viewport()->unsetCursor();
     }
 
+    QUndoStack* undoStack = DocumentManager::instance()->undoGroup()->activeStack();
     if (tool) {
         connect(tool, &AbstractTool::cursorChanged,
                 this, &MapEditor::cursorChanged);
 
         tool->populateToolBar(mToolSpecificToolBar);
+
+        undoStack = tool->undoStack();
+        if(!undoStack && mCurrentMapDocument) {
+            undoStack = mCurrentMapDocument->undoStack();
+        }
     }
+    else if(mCurrentMapDocument) {
+        undoStack = mCurrentMapDocument->undoStack();
+    }
+
+    mUndoDock->setStack( undoStack );
+    DocumentManager::instance()->undoGroup()->setActiveStack(undoStack);
 }
 
 static void normalizeTileLayerPositionsAndMapSize(Map *map)

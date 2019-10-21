@@ -34,6 +34,7 @@
 class QEvent;
 class QKeyEvent;
 class QToolBar;
+class QUndoStack;
 
 namespace Tiled {
 
@@ -160,6 +161,11 @@ public:
     virtual void populateToolBar(QToolBar*) {}
 
     void setMapDocument(MapDocument *mapDocument);
+
+    /**
+     * override to use a different undo stack than the one from the document.
+     */
+    virtual QUndoStack* undoStack() { return nullptr; }
 
 protected:
     virtual void changeEvent(const ChangeEvent &event);

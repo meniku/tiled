@@ -45,6 +45,8 @@
 #include "tmxmapformat.h"
 #include "utils.h"
 #include "wangset.h"
+#include "worlddocument.h"
+#include "worldmanager.h"
 #include "zoomable.h"
 
 #include <QCoreApplication>
@@ -275,6 +277,10 @@ DocumentManager::DocumentManager(QObject *parent)
     };
 
     mTabBar->installEventFilter(this);
+
+    WorldManager& worldManager = WorldManager::instance();
+    connect(&worldManager, &WorldManager::worldUnloaded,
+            this, &DocumentManager::onWorldUnloaded);
 }
 
 DocumentManager::~DocumentManager()
@@ -1137,6 +1143,23 @@ TilesetDocument *DocumentManager::openTilesetFile(const QString &path)
     openFile(path);
     const int i = findDocument(path);
     return i == -1 ? nullptr : qobject_cast<TilesetDocument*>(mDocuments.at(i).data());
+}
+
+WorldDocument *DocumentManager::ensureWorldDocuemnt(const QString& fileName)
+{
+    if(!mWorldDocuments.contains(fileName)) {
+        WorldDocument* worldDocument = new WorldDocument(fileName);
+        mWorldDocuments.insert(fileName, worldDocument);
+        mUndoGroup->addStack(worldDocument->undoStack());
+    }
+    return mWorldDocuments[fileName];
+}
+
+void DocumentManager::onWorldUnloaded( const QString& worldFile )
+{
+    if( mWorldDocuments.contains( worldFile ) ) {
+        delete mWorldDocuments.take(worldFile);
+    }
 }
 
 static bool mayNeedColumnCountAdjustment(const Tileset &tileset)

@@ -110,8 +110,11 @@ public:
     bool removeMap(const QString &fileName);
     bool addMap(const QString &fileName, const QString &mapFileName, const QRect &rect);
 
+
 signals:
     void worldsChanged();
+    void worldReloaded( const QString& fileName );
+    void worldUnloaded( const QString& fileName );
 
 private:
     void reloadWorldFiles(const QStringList &fileNames);
@@ -124,6 +127,7 @@ private:
     FileSystemWatcher mFileSystemWatcher;
 
     static WorldManager *mInstance;
+    QString mIgnoreFileChangeEventForFile;
 };
 
 } // namespace Tiled

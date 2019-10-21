@@ -29,6 +29,7 @@
 #include "maprenderer.h"
 #include "tile.h"
 #include "utils.h"
+#include "worlddocument.h"
 #include "worldmanager.h"
 
 #include <QFileDialog>
@@ -107,10 +108,6 @@ void AbstractWorldTool::languageChanged()
 
 }
 
-void AbstractWorldTool::populateToolBar(QToolBar *toolBar)
-{
-
-}
 
 void AbstractWorldTool::updateEnabledState()
 {
@@ -235,6 +232,16 @@ void AbstractWorldTool::addToWorld( const QString& fileName )
     size.setHeight(size.height() * mapDocument()->map()->tileHeight());
     QRect rect = QRect( QPoint(0,0), size);
     WorldManager::instance().addMap( fileName, mapDocument()->fileName() , rect );
+}
+
+QUndoStack *AbstractWorldTool::undoStack()
+{
+    const World *world = currentConstWorld();
+    if(world)
+    {
+        return DocumentManager::instance()->ensureWorldDocuemnt(world->fileName)->undoStack();
+    }
+    return nullptr;
 }
 
 QPoint AbstractWorldTool::snapPoint(QPoint point) const
