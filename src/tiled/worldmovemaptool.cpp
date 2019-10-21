@@ -154,14 +154,6 @@ void WorldMoveMapTool::mouseLeft()
 //    mapDocument()->setHoveredMapObject(nullptr);
 }
 
-
-static QGraphicsView *findView(QGraphicsSceneEvent *event)
-{
-    if (QWidget *viewport = event->widget())
-        return qobject_cast<QGraphicsView*>(viewport->parent());
-    return nullptr;
-}
-
 void WorldMoveMapTool::mousePressed(QGraphicsSceneMouseEvent *event)
 {
     if( !currentMapCanBeMoved() )

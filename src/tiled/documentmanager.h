@@ -131,7 +131,8 @@ public:
 
     bool eventFilter(QObject *object, QEvent *event) override;
 
-    WorldDocument *ensureWorldDocuemnt(const QString& fileName);
+    WorldDocument *ensureWorldDocument(const QString& fileName);
+    QStringList dirtyWorldFiles() const;
 
 signals:
     void documentCreated(Document *document);

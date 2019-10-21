@@ -45,6 +45,60 @@
 
 using namespace Tiled;
 
+namespace Tiled
+{
+
+class AddMapCommand : public QUndoCommand
+{
+public:
+    AddMapCommand(const QString& worldName, const QString& mapName, const QRect& rect) {
+        mMapName = mapName;
+        mWorldName = worldName;
+        mRect = rect;
+    }
+
+    void undo() override {
+        WorldManager& manager = WorldManager::instance();
+        manager.removeMap( mMapName );
+    }
+
+    void redo() override {
+        WorldManager& manager = WorldManager::instance();
+        manager.addMap( mWorldName, mMapName, mRect );
+    }
+
+private:
+    QString mWorldName;
+    QString mMapName;
+    QRect mRect;
+};
+
+class RemoveMapCommand : public QUndoCommand
+{
+public:
+    RemoveMapCommand(const QString& mapName) {
+        mMapName = mapName;
+        WorldManager& manager = WorldManager::instance();
+        const World* world = manager.worldForMap(mMapName);
+        mPreviousRect = world->mapRect(mMapName);
+        mWorldName = world->fileName;
+    }
+
+    void undo() override {
+        WorldManager& manager = WorldManager::instance();
+        manager.addMap( mWorldName, mMapName, mPreviousRect );
+    }
+
+    void redo() override {
+        WorldManager& manager = WorldManager::instance();
+        manager.removeMap( mMapName );
+    }
+
+private:
+    QString mWorldName;
+    QString mMapName;
+    QRect mPreviousRect;
+};
 
 
 AbstractWorldTool::AbstractWorldTool(const QString &name,
@@ -217,12 +271,12 @@ void AbstractWorldTool::addAnotherMapToWorld()
     QSize size(0,0);
     QRect rect = QRect(snapPoint(mMousePos), size);
 
-    WorldManager::instance().addMap( constWorld->fileName, mapFile, rect );
+    undoStack()->push(new AddMapCommand(constWorld->fileName, mapFile, rect));
 }
 
 void AbstractWorldTool::removeFromWorld()
 {
-    WorldManager::instance().removeMap( mapDocument()->fileName() );
+    undoStack()->push(new RemoveMapCommand(mapDocument()->fileName()));
 }
 
 void AbstractWorldTool::addToWorld( const QString& fileName )
@@ -231,7 +285,7 @@ void AbstractWorldTool::addToWorld( const QString& fileName )
     size.setWidth(size.width() * mapDocument()->map()->tileWidth());
     size.setHeight(size.height() * mapDocument()->map()->tileHeight());
     QRect rect = QRect( QPoint(0,0), size);
-    WorldManager::instance().addMap( fileName, mapDocument()->fileName() , rect );
+    undoStack()->push(new AddMapCommand(fileName, mapDocument()->fileName(), rect));
 }
 
 QUndoStack *AbstractWorldTool::undoStack()
@@ -239,7 +293,7 @@ QUndoStack *AbstractWorldTool::undoStack()
     const World *world = currentConstWorld();
     if(world)
     {
-        return DocumentManager::instance()->ensureWorldDocuemnt(world->fileName)->undoStack();
+        return DocumentManager::instance()->ensureWorldDocument(world->fileName)->undoStack();
     }
     return nullptr;
 }
@@ -249,4 +303,6 @@ QPoint AbstractWorldTool::snapPoint(QPoint point) const
     point.setX( point.x() - (point.x())  % mapDocument()->map()->tileWidth());
     point.setY( point.y() - (point.y())  % mapDocument()->map()->tileHeight());
     return point;
+}
+
 }

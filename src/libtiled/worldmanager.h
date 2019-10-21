@@ -101,7 +101,6 @@ public:
 
     const QMap<QString, World*> &worlds() const { return mWorlds; }
     QStringList loadedWorldFiles() const { return mWorlds.keys(); }
-    QStringList dirtyWorldFiles() const;
 
     const World *worldForMap(const QString &fileName) const;
 

@@ -73,19 +73,6 @@ void WorldManager::deleteInstance()
     mInstance = nullptr;
 }
 
-QStringList WorldManager::dirtyWorldFiles() const
-{
-    QStringList list;
-    for (auto world : mWorlds)
-    {
-        if( world->isDirty )
-        {
-            list += world->fileName;
-        }
-    }
-    return list;
-}
-
 void WorldManager::reloadWorldFiles(const QStringList &fileNames)
 {
     bool changed = false;

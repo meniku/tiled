@@ -73,6 +73,7 @@
 #include "utils.h"
 #include "worldmanager.h"
 #include "zoomable.h"
+#include "worlddocument.h"
 
 #ifdef Q_OS_MAC
 #include "macsupport.h"
@@ -541,7 +542,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     connect(mUi->menuSaveWorld, &QMenu::aboutToShow, this, [this] {
         mUi->menuSaveWorld->clear();
 
-        const auto worldFiles = WorldManager::instance().dirtyWorldFiles();
+        const auto worldFiles = DocumentManager::instance()->dirtyWorldFiles();
         for (const QString &fileName : worldFiles) {
             QAction *saveAction = mUi->menuSaveWorld->addAction(fileName);
             connect(saveAction, &QAction::triggered, this, [this,fileName]
@@ -551,10 +552,16 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
                 {
                     QMessageBox::critical(this, tr("Error Writing Worldfile"), error);
                 }
-                const auto worldFiles = WorldManager::instance().dirtyWorldFiles();
+                const auto worldFiles = DocumentManager::instance()->dirtyWorldFiles();
                 mUi->menuSaveWorld->setEnabled(!worldFiles.isEmpty());
             });
         }
+    });
+    connect(mUi->menuMap, &QMenu::aboutToShow, this, [this] {
+        const auto worldFiles = DocumentManager::instance()->dirtyWorldFiles();
+        const bool enabled =  worldFiles.size();
+        mUi->menuSaveWorld->setVisible(enabled);
+        mUi->menuSaveWorld->setTitle( enabled ? tr("Save World File*") : tr("Save World File"));
     });
     connect(mUi->actionResizeMap, &QAction::triggered, this, &MainWindow::resizeMap);
     connect(mUi->actionOffsetMap, &QAction::triggered, this, &MainWindow::offsetMap);
@@ -574,7 +581,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     connect(mUi->actionAboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);
 
     mUi->menuUnloadWorld->setEnabled(!WorldManager::instance().worlds().isEmpty());
-    mUi->menuSaveWorld->setEnabled(!WorldManager::instance().dirtyWorldFiles().isEmpty());
+    mUi->menuSaveWorld->setEnabled(!DocumentManager::instance()->dirtyWorldFiles().isEmpty());
 
     // Add recent file actions to the recent files menu
     for (auto &action : mRecentFiles) {
@@ -1012,8 +1019,8 @@ bool MainWindow::confirmAllSave()
             return false;
     }
 
-    QStringList dirtyWorlds = WorldManager::instance().dirtyWorldFiles();
-    for( QString& fileName : dirtyWorlds )
+    QStringList worldFiles = DocumentManager::instance()->dirtyWorldFiles();
+    for( QString& fileName : worldFiles )
     {
         int ret = QMessageBox::warning(
                 this, tr("Unsaved Changes to world"),
@@ -1026,6 +1033,7 @@ bool MainWindow::confirmAllSave()
             {
                 return false;
             }
+            DocumentManager::instance()->ensureWorldDocument(fileName)->undoStack()->setClean();
             break;
         case QMessageBox::Discard:
             break;

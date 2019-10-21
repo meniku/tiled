@@ -894,8 +894,6 @@ void DocumentManager::currentIndexChanged()
 
     if (document) {
         editor = mEditorForType.value(document->type());
-        mUndoGroup->setActiveStack(document->undoStack());
-
         changed = isDocumentChangedOnDisk(document);
     }
 
@@ -1145,7 +1143,7 @@ TilesetDocument *DocumentManager::openTilesetFile(const QString &path)
     return i == -1 ? nullptr : qobject_cast<TilesetDocument*>(mDocuments.at(i).data());
 }
 
-WorldDocument *DocumentManager::ensureWorldDocuemnt(const QString& fileName)
+WorldDocument *DocumentManager::ensureWorldDocument(const QString& fileName)
 {
     if(!mWorldDocuments.contains(fileName)) {
         WorldDocument* worldDocument = new WorldDocument(fileName);
@@ -1153,6 +1151,24 @@ WorldDocument *DocumentManager::ensureWorldDocuemnt(const QString& fileName)
         mUndoGroup->addStack(worldDocument->undoStack());
     }
     return mWorldDocuments[fileName];
+}
+
+QStringList DocumentManager::dirtyWorldFiles() const
+{
+    QStringList dirtyWorldFiles;
+    QStringList allWorldFiles = WorldManager::instance().loadedWorldFiles();
+
+    for(const QString &worldFile : allWorldFiles) {
+        if(!mWorldDocuments.contains(worldFile)) {
+            continue;
+        }
+        if(mWorldDocuments[worldFile]->undoStack()->isClean()) {
+            continue;
+        }
+        dirtyWorldFiles.append(worldFile);
+    }
+
+    return dirtyWorldFiles;
 }
 
 void DocumentManager::onWorldUnloaded( const QString& worldFile )

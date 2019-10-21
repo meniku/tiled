@@ -483,6 +483,8 @@ void MapEditor::setCurrentDocument(Document *document)
 
         mViewWithTool = mapView;
     }
+
+    updateActiveUndoStack();
 }
 
 Document *MapEditor::currentDocument() const
@@ -651,14 +653,21 @@ void MapEditor::setSelectedTool(AbstractTool *tool)
             mViewWithTool->viewport()->unsetCursor();
     }
 
-    QUndoStack* undoStack = DocumentManager::instance()->undoGroup()->activeStack();
     if (tool) {
         connect(tool, &AbstractTool::cursorChanged,
                 this, &MapEditor::cursorChanged);
 
         tool->populateToolBar(mToolSpecificToolBar);
+    }
 
-        undoStack = tool->undoStack();
+    updateActiveUndoStack();
+}
+
+void MapEditor::updateActiveUndoStack()
+{
+    QUndoStack* undoStack = DocumentManager::instance()->undoGroup()->activeStack();
+    if(mSelectedTool) {
+        undoStack = mSelectedTool->undoStack();
         if(!undoStack && mCurrentMapDocument) {
             undoStack = mCurrentMapDocument->undoStack();
         }
@@ -666,7 +675,6 @@ void MapEditor::setSelectedTool(AbstractTool *tool)
     else if(mCurrentMapDocument) {
         undoStack = mCurrentMapDocument->undoStack();
     }
-
     mUndoDock->setStack( undoStack );
     DocumentManager::instance()->undoGroup()->setActiveStack(undoStack);
 }

@@ -9,6 +9,7 @@ WorldDocument::WorldDocument(const QString& fileName)
     : mUndoStack( new QUndoStack(this) ),
       mFileName( fileName )
 {
+    mUndoStack->setClean();
     WorldManager& worldManager = WorldManager::instance();
     connect(&worldManager, &WorldManager::worldReloaded,
             this, &WorldDocument::onWorldReloaded);
@@ -31,5 +32,6 @@ QUndoStack* WorldDocument::undoStack() const
 {
     return mUndoStack;
 }
+
 
 }

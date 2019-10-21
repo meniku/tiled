@@ -41,11 +41,12 @@ public:
     virtual ~WorldDocument() override;
 
     QUndoStack* undoStack() const;
+
 protected:
     virtual void onWorldReloaded( const QString& filename );
 
-    QString mFileName;
     QUndoStack* mUndoStack;
+    QString mFileName;
 };
 
 } // namespace Tiled
